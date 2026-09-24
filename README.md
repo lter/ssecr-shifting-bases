@@ -1,6 +1,6 @@
-# [Group Type] Group Title
+# Shifting Baselines [SSECR 2026] 
 
-Principal Investigators: _Name, Name, ..._
+Principal Investigators: Emerson Conrad-Rooney, Nyika Campbell, Deni Murray, Asher Marvy, Kalea Nippert-Churchman
 
 ## Script Explanations
 
