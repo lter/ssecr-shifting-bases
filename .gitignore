@@ -1,3 +1,5 @@
+#### STANDARD IGNORED FILES ####
+
 # History files
 .Rhistory
 .Rapp.history
@@ -83,7 +85,16 @@ vignettes/*.pdf
 # *.xls 
 # *.txt
 
-# Folders to ignore
+#### REPO_SPECIFIC IGNORES ####
 ## Add any folders you’d like to ignore below (with or without the trailing slash)
-# data/
+# any data or output folders in any subdirectory at any level
+data/
+output/
+outputs/
+input/
+inputs/
 # graphs/
+
+# Any folder containing 'scratch' including names that end with 'scratch' (case insensitive)
+*scratch/
+
