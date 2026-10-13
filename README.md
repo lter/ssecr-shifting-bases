@@ -21,11 +21,11 @@ Briefly describe the purpose of major scripts as you create them!
 
 ```
 seecr-shifting-baselines/
-├── 1_data-management/            # raw data intake, cleaning, reshaping, standardization, creation of derived data
-├── 2_sandbox/                    # A place for working, experimental or in-process scripts
+├── data-management/            # raw data intake, cleaning, reshaping, standardization, creation of derived data
+├── data-analysis/              # Finished analysis scripts w/ documentaion
+├── sandbox/                      # A place for working, experimental or in-process scripts
 │   ├── data/                     # Git-ignored folder for locally stored data accessible from anyone's working folder
 │   └── name-working/             # Folder for each person's personal experimental work
-├── 3_data-analysis/              # Finished analysis scripts w/ documentaion
 ├── x_scratch/                    # git-ignored scratch space for locally stored material
 └── README.md
 ```
@@ -36,9 +36,9 @@ seecr-shifting-baselines/
 
 | Item | Description |
 | --- | --- |
-| `1_data-management/` | raw data intake, cleaning, and derived data; numbered workflow scripts |
-| `2_sandbox/` | exploratory plots and summary stats; one subfolder per person or collaborative workflow |
-| `3_data-analysis/` | finalized, debugged, and documented scripts that contribute to our final product |
+| `data-management/` | raw data intake, cleaning, and derived data; numbered workflow scripts |
+| `data-analysis/` | finalized, debugged, and documented scripts that contribute to our final product |
+| `sandbox/` | exploratory plots and summary stats; one subfolder per person or collaborative workflow |
 | `x_scratch/` | git-ignored scratch space for local files |
 
 ### Script & Folder Explanations
