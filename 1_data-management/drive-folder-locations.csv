@@ -1,0 +1,4 @@
+﻿key,drive_id,note
+data_root,1wNL7DGYT2yF_ZPlCjBWsvaF3cFHXLZMx,00_DATA -- all raw and derived data used in the project
+raw_data_root,1nV98jfYLOjNiqXwCXrapzjvtJr_82mpl,00_RAW-DATA -- cleaning scripts read raw downloads from here
+derived_data_root,16889FmUaYzteN36rFc4qEds7AFuLc-Xc,02_Derived-Data -- cleaned/derived outputs are pushed here
