@@ -1,5 +1,7 @@
 ## PURPOSE AND USE:
 #This script reads in data from our data log (in google drive) using the googledrive package and saves it to a local folder which is automatically git ignored
+# Add datasets to download by updating the https://docs.google.com/spreadsheets/d/1RZ5IbneqZOQX13Wmcu3APHuFADN8i4pLsiqoCRovDT8/edit?usp=sharing Datalog and setting the `read_into_git` col to TRUE
+
 # PART 1: SETUP ---- (libraries and sourcing using `here`)
 librarian::shelf(googledrive, dplyr, stringr, here)
 
@@ -9,7 +11,6 @@ librarian::shelf(googledrive, dplyr, stringr, here)
 drive_download_path <- here::here("1_data-management", "data", "drive_download")
 # make the path if it doesn't exist
 dir.create(drive_download_path, recursive = TRUE, showWarnings = FALSE)
-
 
 # PART 3: READ IN FILES ----
 
@@ -37,5 +38,6 @@ for (i in seq_len(nrow(data_log))) {
     )
   }
 }
+
 # PART X: SAVE OUTPUTS ---- (and report out that script is done. This always last.)
 message(paste("All datasets have been downloaded. Check the data_log.csv file for details on each dataset. Download location:", drive_download_path))
