@@ -61,6 +61,17 @@ LTER Scientific Computing Team [website](https://lter.github.io/scicomp/) & NCEA
 
 **Scripts:** Script naming conventions:
 
+**Script Organization:** 
+Potential Script organization
+
+- `# PURPOSE AND USE:`
+- `# PART 1: SETUP ----` (libraries and sourcing using `here`)
+- `# PART 2: USER INPUTS ----` (keep user inputs and switches in one place)
+- `# PART 3: READ IN FILES ----`
+- `# PART 4: DEFINE FUNCTIONS ----` (if not sourced from another script)
+- `# PART 5: (other things the script does) ----`
+- `# PART X: SAVE OUTPUTS ----` (and report out that script is done. This always last.)
+
 **Outputs:** outputs from scripts should be gitignored and stored in an `output` folder. A numeric or alphanumeric prefix may indicate which script the output came from, and / or what type of data it is. Output names should be descriptive, even if long, since outputs are often shared without context. 
 
 **README:** All READMEs in all subdirectories should be named `README`. The first line of each should specify the location of the readme in the following format: `# README: repo-name/directory/subdirectory`. Expressive naming should ensure the file path indicates what the readme is about.
