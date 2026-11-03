@@ -107,7 +107,7 @@ corre_main <- corre_main %>%
 ## Make length in years numeric
 unique(corre_main$experiment_length_years)
 
-corre_new <- corre_main %>%
+corre_main <- corre_main %>%
   coerce_numeric_with_note(experiment_length_years)   # no quotes
 
 unique(corre_main$experiment_length_years)
