@@ -1,0 +1,28 @@
+# README: ssecr-shifting-bases/1_data-management
+
+## Purpose
+
+This folder handles raw data intake, cleaning, reshaping, and creation of derived datasets used by later analysis steps.
+
+## Status / To-do
+- [ ] Finalize column key / renaming scheme used in `combine_datasets.R`
+- [ ] Decide on shape of the combined output needed downstream (lat, long, site name, study duration, etc.)
+
+## Workflow
+
+1. **Add new data in Google Drive:** Add new data to the [`00_DATA`](https://drive.google.com/drive/folders/1wNL7DGYT2yF_ZPlCjBWsvaF3cFHXLZMx?usp=drive_link) folder on google-drive. Follow the naming conventions described in the [`README.md`](https://github.com/lter/ssecr-shifting-bases/blob/main/README.md). Each *dataset* should be given a kebab-case shortname and located in its own sub folder in the google drive data folder. A *dataset* may have multiple *data-products* including different metadata and data .csv.
+2. **Update the Data Log:** Enter new dataset in the [`shifting-baselines_data-log`](https://docs.google.com/spreadsheets/d/1RZ5IbneqZOQX13Wmcu3APHuFADN8i4pLsiqoCRovDT8/edit?usp=sharing). For datasets with multiple sheets or lots of metadata it is only necessary to make a row for the data products we plan to use.The team's data log (tracked in Drive as a Google Sheet) lists every dataset we use, where it lives on Drive, and whether it should be pulled into this repo (`read_into_git == TRUE`).
+3. **Pull data to work locally:** Run `tools/import-drive-data.R` to download the data log and every flagged dataset into `data/drive_download/`. This folder is git-ignored, so nothing downloaded here is committed. Do this before working with data to ensure you have the latest version
+4. **Run other coded workflows:** Scripts in `scripts/` read from the local `data/` folder (not from Drive directly) to combine, clean, and reshape datasets into derived products.
+
+## Sub Folder Structure
+
+| Item | Description |
+| --- | --- |
+| `tools/` | Reusable utility scripts that support the workflow but aren't part of the numbered cleaning/combining pipeline |
+| `scripts/` | Numbered workflow scripts that read, clean, combine, and reshape data into derived outputs |
+| `data/` | Git-ignored local storage for downloaded and derived data |
+| `drive-folder-locations.csv` | Key/ID lookup for important Drive folders (raw data root, derived data root, etc.) |
+
+## Script & Tool Explanations
+See the overall [`README.md`](https://github.com/lter/ssecr-shifting-bases/blob/main/README.md) file for a description of script.

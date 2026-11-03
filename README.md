@@ -9,7 +9,7 @@ Principal Investigators: Emerson Conrad-Rooney, Nyika Campbell, Deni Murray, Ash
 
 ## Repo to-do list
 - [ ] Decide on more GitHub Organization Structure. See "File Structure" section below for sugestions
-- [ ] Discuss use of Agents in Repo, set up Agents.md and Prompt Action Log if using
+- [x] Discuss use of Agents in Repo, set up Agents.md and Prompt Action Log if using. Ok for coding, not to touch or view non-public data. Human-review all outputs.
 
 ## Repository layout
 Briefly describe the purpose of major scripts as you create them!
@@ -47,7 +47,7 @@ Briefly describe the purpose of major scripts as you create them!
 
 | Script | Purpose | Location |
 | --- | --- | --- |
-| `script-name` | Script Purpose | Top-level folder Location |
+| `import-drive-data.R` | Reads the data log from Google Drive and downloads each dataset flagged `read_into_git == TRUE` into a local, git-ignored folder | `1_data-management/tools/` |
 
 ## Supplementary Resources
 
