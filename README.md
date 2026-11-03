@@ -48,6 +48,10 @@ Briefly describe the purpose of major scripts as you create them!
 | Script | Purpose | Location |
 | --- | --- | --- |
 | `import-drive-data.R` | Reads the data log from Google Drive and downloads each dataset flagged `read_into_git == TRUE` into a local, git-ignored folder | `1_data-management/tools/` |
+| `mesi_wide_long_conversion.R` | Converts the MESI main table from wide to long format (one row per control/treatment comparison). Adapted from the [public MESI data package](https://doi.org/10.5281/zenodo.10423853) | `1_data-management/tools/` |
+| `01_wrangle-datasets.R` | Cleans and reshapes each raw dataset (Song, Corre, MESI) individually so they're ready to harmonize; writes derived data to `data/derived_data/` | `1_data-management/scripts/` |
+| `02_harmonize-datasets.R` | Uses `ltertools::harmonize()` and a column key to rename columns across the derived datasets into a shared, combined format | `1_data-management/scripts/` |
+| `SongDataCompile.py` | Compiles the raw Song et al. 2019 CSVs, cleans/renames columns, standardizes sampling years, and calculates study duration per experiment | `sandbox/deni-working/` |
 
 ## Supplementary Resources
 
