@@ -16,11 +16,16 @@ dir.create(drive_download_path, recursive = TRUE, showWarnings = FALSE)
 
 # Fist Read in the Data Log
 ## Watch the terminal this requires a login the first time you run it 
-drive_download("https://docs.google.com/spreadsheets/d/1RZ5IbneqZOQX13Wmcu3APHuFADN8i4pLsiqoCRovDT8/edit?gid=0#gid=0", 
+drive_download("https://docs.google.com/spreadsheets/d/1RZ5IbneqZOQX13Wmcu3APHuFADN8i4pLsiqoCRovDT8/edit?gid=0#gid=0",
     type = "csv",
     path = here::here(drive_download_path, "data_log.csv"),
     overwrite = TRUE)
-    
+
+# Read in the column key for renaming and subsetting columns
+drive_download("https://docs.google.com/spreadsheets/d/16993pe8Aqfo3DOoS8FhS1_wv1pn5TnBQRmwOcwuJewo/edit?usp=sharing",
+    type = "csv",
+    path = here::here(drive_download_path, "column_key.csv"),
+    overwrite = TRUE)
 
 ## Read in the other datasets as defined in the data log. Update datalog to change read-in
 # Read in the data log (downloaded above)
