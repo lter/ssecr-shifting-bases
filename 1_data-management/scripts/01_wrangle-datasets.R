@@ -116,12 +116,50 @@ corre_wrangled <- corre_main
 message("Corre data wrangled. Check the qaqc_note column for any issues.")
 
 # PART 7: MESI Data ----
-## add later
+mesi_main <- read_csv(here::here(drive_download_path, "mesi_main.csv"))
+mesi_metadata <- read_csv(here::here(drive_download_path, "mesi_metadata.csv"))
+
+# check sampling years
+unique(mesi_main$start_year)
+
+## for each unique exp: extract experiment start (start_year), duration (duration), and the end date (end_year)
+mesi_summary_raw <- mesi_main %>%
+  filter(experiment_type=="field")  %>%
+  group_by(study,lat,lon,ecosystem_type) %>%
+  summarise(
+    start_year = min(start_year),
+    duration   = max(duration),
+    end_year = max(as.numeric(str_extract(as.character(sampling_date),"\\d{4}$"))),
+    citations = paste(unique(citation), collapse=","),
+    treatments = paste(unique(treatment), collapse = ","),
+    elevation = max(elevation) +
+    .groups = "drop",
+  )
+
+## fill in missing values by calcuting from existing columns
+mesi_summary <- mesi_summary_raw %>%
+  mutate(
+    start_year = coalesce(start_year, end_year-duration+1),
+    end_year = coalesce(end_year, start_year+duration-1),
+    duration = coalesce(duration, end_year-start_year+1)
+  )
+
+## add a qaqc_note col on the far right of main dataset and the dataset name on far left
+mesi_summary <- mesi_summary %>%
+  mutate(dataset = "mesi", 
+         qaqc_note = NA_character_) %>%
+  relocate(dataset)
+
+## how many datasets have full start, end date - 630
+length(mesi_summary$start_year) - sum(is.na(mesi_summary$start_year))
+
+mesi_wrangled <- mesi_summary
+message("Mesi data wrangled")
 
 # PART X: SAVE OUTPUTS ---- (and report out that script is done. This always last.)
 
 #Define datasets to save
-datasets_to_save <- c("corre_wrangled", "song_wrangled")
+datasets_to_save <- c("corre_wrangled", "song_wrangled","mesi_wrangled")
 
 ## save wrangled datasets to derived_data_path as .csv files
 for (dataset_name in datasets_to_save) {
