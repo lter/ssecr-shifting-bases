@@ -1,0 +1,51 @@
+# Copy this file, fill it in, and run:  era5land-points my-config.yaml
+
+# Where the results go: a folder, made if missing, relative to this file.
+output_folder: results
+
+# Either list locations below, OR read them from a CSV file (relative to this config file).
+# For CSV input, uncomment locations_file and location_columns, and remove/comment locations.
+# locations_file: sites.csv
+# location_columns:
+#   name: site_code
+#   latitude: Latitude
+#   longitude: Longitude
+#
+# The points: a name, and latitude and longitude in decimal degrees (north and east positive).
+# Each point's data come from ERA5-Land's grid point nearest it, on a 0.1° grid (about 9 km).
+locations:
+  - name: Boulder, Colorado
+    latitude: 40.015
+    longitude: -105.270
+  - name: Ames, Iowa
+    latitude: 42.034
+    longitude: -93.620
+  - name: Reading, England
+    latitude: 51.454
+    longitude: -0.973
+
+# The variables, by the names in the README's table.
+variables:
+  - air_temperature
+  - precipitation
+  - soil_temperature_0_7cm
+  - soil_temperature_7_28cm
+  - soil_temperature_28_100cm
+  - soil_temperature_100_289cm
+
+# The first and last day, both included, as YYYY-MM-DD. Leave either out for the start of the
+# record (1950) or its end (about a week before today).
+# start: 1991-01-01
+# end: 2020-12-31
+
+# The CSV files to write: any of hourly, daily, monthly and yearly. Hourly files are large: about
+# 60 MB a location over the whole record with these six variables. The viewer shows all four
+# whatever this says.
+aggregations: [daily, monthly, yearly]
+
+# How days are counted: local (each location's local standard time, without daylight saving
+# time) or utc.
+time_zone: local
+
+# How many requests to send to the Climate Data Store at once.
+parallel_requests: 4

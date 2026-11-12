@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ERA5-Land points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: the points on a map beside a panel of the chosen point's charts; stacked on phones. */
+:root {
+  --bg: #f3f5f2;
+  --surface: #fcfcfb;
+  --ink: #121614;
+  --ink-2: #4b5450;
+  --muted: #7d847f;
+  --line: #e0e3dc;
+  --axis: #c3c6bd;
+  --accent: #1d6b57;
+  --accent-ink: #ffffff;
+  --failed: #b9bdb6;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  /* Soil layers, shallow to deep: one hue, light to dark. */
+  --d1: #86b6ef; --d2: #3987e5; --d3: #1c5cab; --d4: #0d366b;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1110; --surface: #171b19; --ink: #edf0ec; --ink-2: #bfc5bd; --muted: #8a918b;
+    --line: #2a2f2c; --axis: #3b403d; --accent: #4bb394; --accent-ink: #0e1110; --failed: #4a504c;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --d1: #b7d3f6; --d2: #6da7ec; --d3: #2a78d6; --d4: #184f95;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1110; --surface: #171b19; --ink: #edf0ec; --ink-2: #bfc5bd; --muted: #8a918b;
+  --line: #2a2f2c; --axis: #3b403d; --accent: #4bb394; --accent-ink: #0e1110; --failed: #4a504c;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --d1: #b7d3f6; --d2: #6da7ec; --d3: #2a78d6; --d4: #184f95;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; display: flex; flex-direction: column;
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; padding-block: 14px 12px; }
+.top h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.top p { margin: 0; color: var(--ink-2); font-size: 13px; }
+.chip { display: inline-block; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
+
+.app { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(400px, 46%); gap: 16px; padding-bottom: 16px; }
+.map-wrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+#map { position: absolute; inset: 0; background: var(--surface); }
+.basemap { position: absolute; top: 10px; right: 10px; z-index: 1001; background: var(--surface); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
+#map-note { position: absolute; inset: auto 12px 12px 12px; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); font-size: 13px; z-index: 1001; }
+.panel { min-height: 0; min-width: 0; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .map-wrap { height: 46vh; min-height: 280px; }
+  .panel { overflow: visible; }
+}
+
+.pick { display: flex; flex-direction: column; gap: 4px; }
+.pick label, .label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+select, button { font: inherit; color: inherit; }
+select { width: 100%; padding: 6px 8px; border: 1px solid var(--axis); border-radius: 6px; background: var(--surface); font-size: 16px; font-weight: 600; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 14px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-family: var(--font-data); font-size: 12.5px; overflow-wrap: anywhere; }
+.failed { margin: 0; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: 13px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.seg { display: inline-flex; border: 1px solid var(--axis); border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--axis); }
+.seg button[aria-checked="true"] { background: var(--ink); color: var(--surface); font-weight: 600; }
+.link-button { border: 0; background: none; padding: 0; color: var(--accent); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.window { font-size: 12px; color: var(--muted); font-family: var(--font-data); }
+.note { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+
+.chart { display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.chart h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.chart .meta { font-size: 12px; color: var(--muted); }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.key { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.plot { position: relative; }
+.plot svg { display: block; width: 100%; height: 190px; overflow: visible; }
+.plot .grid { stroke: var(--line); stroke-width: 1; }
+.plot .base { stroke: var(--axis); stroke-width: 1; }
+.plot text { fill: var(--muted); font: 11px var(--font-data); }
+.plot .hit { fill: transparent; cursor: crosshair; touch-action: pan-y; }
+.plot .cross { stroke: var(--ink-2); stroke-width: 1; }
+.plot .brush { fill: var(--accent); fill-opacity: 0.12; stroke: var(--accent); stroke-width: 1; }
+.tip { position: absolute; top: 4px; z-index: 5; pointer-events: none; min-width: 120px; padding: 7px 9px; border-radius: 7px; background: var(--surface); border: 1px solid var(--axis); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); font-size: 12px; }
+.tip .when { color: var(--muted); font-family: var(--font-data); margin-bottom: 3px; }
+.tip .row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.tip strong { font-family: var(--font-data); font-weight: 500; color: var(--ink); }
+.tip .name { color: var(--ink-2); }
+details { font-size: 12.5px; }
+summary { cursor: pointer; color: var(--ink-2); width: max-content; }
+.table-wrap { overflow-x: auto; max-height: 280px; overflow-y: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 3px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { position: sticky; top: 0; background: var(--surface); font-weight: 600; }
+td { font-family: var(--font-data); font-size: 12px; }
+.credit { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.credit p { margin: 0; max-width: 70ch; }
+.credit a { color: var(--ink-2); }
+
+/* The parts of Leaflet 1.9.4's stylesheet the map needs (leaflet.css, BSD 2-Clause licence,
+   © 2010-2023 Vladimir Agafonkin, © 2010-2011 CloudMade), inlined so the page loads no stylesheet
+   from elsewhere. */
+.leaflet-pane, .leaflet-tile, .leaflet-tile-container, .leaflet-pane > svg, .leaflet-pane > canvas,
+.leaflet-zoom-box, .leaflet-layer { position: absolute; left: 0; top: 0; }
+.leaflet-container { overflow: hidden; -webkit-tap-highlight-color: transparent; font: 12px/1.4 var(--font-body); outline-offset: 1px; }
+.leaflet-tile { user-select: none; -webkit-user-drag: none; visibility: hidden; }
+.leaflet-tile-loaded { visibility: inherit; }
+.leaflet-container img.leaflet-tile { max-width: none !important; max-height: none !important; width: 256px; height: 256px; }
+.leaflet-container .leaflet-overlay-pane svg { max-width: none !important; max-height: none !important; }
+.leaflet-pane { z-index: 400; }
+.leaflet-tile-pane { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-marker-pane { z-index: 600; }
+.leaflet-tooltip-pane { z-index: 650; }
+.leaflet-popup-pane { z-index: 700; }
+.leaflet-map-pane svg { z-index: 200; }
+.leaflet-zoom-box { width: 0; height: 0; box-sizing: border-box; z-index: 800; border: 2px dotted var(--accent); }
+.leaflet-control { position: relative; z-index: 800; pointer-events: auto; float: left; clear: both; }
+.leaflet-top, .leaflet-bottom { position: absolute; z-index: 1000; pointer-events: none; }
+.leaflet-top { top: 0; } .leaflet-right { right: 0; } .leaflet-bottom { bottom: 0; } .leaflet-left { left: 0; }
+.leaflet-right .leaflet-control { float: right; }
+.leaflet-top .leaflet-control { margin-top: 10px; }
+.leaflet-bottom .leaflet-control { margin-bottom: 0; }
+.leaflet-left .leaflet-control { margin-left: 10px; }
+.leaflet-right .leaflet-control { margin-right: 0; }
+.leaflet-zoom-animated { transform-origin: 0 0; }
+.leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1); }
+.leaflet-zoom-anim .leaflet-tile, .leaflet-pan-anim .leaflet-tile { transition: none; }
+.leaflet-zoom-anim .leaflet-zoom-hide { visibility: hidden; }
+.leaflet-interactive { cursor: pointer; }
+.leaflet-grab { cursor: grab; }
+.leaflet-dragging .leaflet-grab, .leaflet-dragging .leaflet-interactive { cursor: move; }
+.leaflet-bar { border-radius: 6px; border: 1px solid var(--axis); overflow: hidden; background: var(--surface); }
+.leaflet-bar a { display: block; width: 30px; height: 30px; line-height: 30px; text-align: center; text-decoration: none; color: var(--ink); background: var(--surface); font: 600 18px/30px var(--font-data); }
+.leaflet-bar a + a { border-top: 1px solid var(--axis); }
+.leaflet-bar a.leaflet-disabled { color: var(--muted); cursor: default; }
+.leaflet-control-attribution { padding: 1px 6px; font-size: 11px; color: var(--ink-2); background: var(--surface); opacity: 0.9; }
+.leaflet-control-attribution a { color: var(--ink-2); }
+.leaflet-tooltip { position: absolute; padding: 3px 7px; border-radius: 5px; background: var(--surface); border: 1px solid var(--axis); color: var(--ink); white-space: nowrap; pointer-events: none; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
+.leaflet-tooltip-top { margin-top: -8px; } .leaflet-tooltip-bottom { margin-top: 8px; }
+.leaflet-tooltip-left { margin-left: -8px; } .leaflet-tooltip-right { margin-left: 8px; }
+@media (prefers-reduced-motion: reduce) { .leaflet-zoom-anim .leaflet-zoom-animated { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>ERA5-Land points</h1>
+  <p id="summary"></p>
+</header>
+<main class="app">
+  <section class="map-wrap" aria-label="Map of the locations">
+    <div id="map"></div>
+    <div class="seg basemap" role="radiogroup" aria-label="Map background" id="basemap" hidden></div>
+    <p id="map-note" hidden></p>
+  </section>
+  <section class="panel" aria-label="The chosen location's data">
+    <div class="pick">
+      <label for="pick">Location</label>
+      <select id="pick"></select>
+    </div>
+    <dl class="facts" id="facts"></dl>
+    <p class="failed" id="failed" hidden></p>
+    <div id="data-part">
+      <div class="controls">
+        <div class="seg" role="radiogroup" aria-label="Aggregation" id="aggs"></div>
+        <button class="link-button" id="reset" type="button" hidden>Show the whole record</button>
+        <span class="window" id="window"></span>
+      </div>
+      <p class="note" id="hint">Drag across a chart to zoom in; double-click to see the whole record.</p>
+      <p class="note" id="status" hidden></p>
+      <div id="charts"></div>
+    </div>
+    <footer class="credit" id="credit"></footer>
+  </section>
+</main>
+<script type="application/json" id="page-data">/*DATA*/</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("page-data").textContent);
+  var HOUR = 3600e3, DAY = 86400e3;
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var NAMES = { hourly: "Hourly", daily: "Daily", monthly: "Monthly", yearly: "Yearly" };
+  var SVG = "http://www.w3.org/2000/svg";
+  var ok = DATA.locations.map(function (l, i) { return l.status === "ok" ? i : -1; }).filter(function (i) { return i >= 0; });
+  // The chosen location and aggregation, and the time window: [start, end] in ms, "all" for
+  // the whole record, or null for the aggregation's own, the last 30 days for hourly values.
+  var state = { at: ok.length ? ok[0] : 0, agg: DATA.aggregations[0], view: null };
+  var HOURLY_DAYS = 30;
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var made = document.createElement(tag);
+    if (cls) made.className = cls;
+    if (text !== undefined) made.textContent = text;
+    return made;
+  }
+  function svg(tag, attrs, parent) {
+    var made = document.createElementNS(SVG, tag);
+    Object.keys(attrs).forEach(function (k) { made.setAttribute(k, attrs[k]); });
+    if (parent) parent.appendChild(made);
+    return made;
+  }
+  function token(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function degrees(value, plus, minus) { return Math.abs(value).toFixed(4) + "° " + (value >= 0 ? plus : minus); }
+  function place(lat, lon) { return degrees(lat, "N", "S") + ", " + degrees(lon, "E", "W"); }
+  function isoDay(t) { var d = new Date(t); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()); }
+  function offsetWords(hours) { return hours === 0 ? "UTC" : "UTC" + (hours > 0 ? "+" : "−") + Math.abs(hours); }
+  function number(v) {
+    if (v === null || v === undefined) return "no value";
+    var a = Math.abs(v);
+    var digits = a >= 100 ? 1 : a >= 1 ? 2 : 3;
+    return v.toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+  }
+  // An axis label, with as many decimals as the ticks' step needs.
+  function tickWords(v, step) {
+    var digits = Math.max(0, Math.ceil(-Math.log10(step) - 1e-9));
+    if (Math.abs(Math.round(step * Math.pow(10, digits)) - step * Math.pow(10, digits)) > 1e-6) digits++;
+    return v.toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+  }
+
+  // --- Periods ------------------------------------------------------------------------------
+  // Times are local-clock times written as UTC milliseconds. An hour is stamped with its end,
+  // so hour k covers [at(k), at(k + 1)], and its label is its end.
+  function periods(agg, start) {
+    var p = {};
+    if (agg === "yearly") {
+      var y0 = +start;
+      p.at = function (k) { return Date.UTC(y0 + k, 0, 1); };
+      p.index = function (t) { return new Date(t).getUTCFullYear() - y0; };
+      p.label = function (k) { return String(y0 + k); };
+    } else if (agg === "monthly") {
+      var ym = start.split("-"), y1 = +ym[0], m1 = +ym[1] - 1;
+      p.at = function (k) { return Date.UTC(y1, m1 + k, 1); };
+      p.index = function (t) { var d = new Date(t); return (d.getUTCFullYear() - y1) * 12 + d.getUTCMonth() - m1; };
+      p.label = function (k) { var d = new Date(p.at(k)); return MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+    } else if (agg === "daily") {
+      var t0 = Date.parse(start + "T00:00:00Z");
+      p.at = function (k) { return t0 + k * DAY; };
+      p.index = function (t) { return Math.floor((t - t0) / DAY); };
+      p.label = function (k) { return isoDay(p.at(k)); };
+    } else {
+      var first = Date.parse(start + ":00:00Z") - HOUR;
+      p.at = function (k) { return first + k * HOUR; };
+      p.index = function (t) { return Math.floor((t - first) / HOUR); };
+      p.label = function (k) { var e = new Date(p.at(k + 1)); return isoDay(e - 1) + " " + pad(e.getUTCHours() === 0 ? 24 : e.getUTCHours()) + ":00"; };
+    }
+    return p;
+  }
+
+  function niceTicks(lo, hi, count) {
+    if (hi <= lo) { hi = lo + 1; lo = lo - 1; }
+    var raw = (hi - lo) / Math.max(1, count), mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var step = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; }).filter(function (s) { return s >= raw; })[0];
+    var ticks = [];
+    for (var v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) ticks.push(+v.toFixed(10));
+    return { ticks: ticks, lo: lo, hi: hi, step: step };
+  }
+
+  function timeTicks(tA, tB, fits) {
+    var ticks = [], spanDays = (tB - tA) / DAY, d = new Date(tA), y, t, step;
+    if (spanDays / 365.25 >= 3) {
+      step = [1, 2, 5, 10, 20, 25, 50].filter(function (s) { return spanDays / 365.25 / s <= fits; })[0] || 50;
+      for (y = Math.ceil(d.getUTCFullYear() / step) * step; (t = Date.UTC(y, 0, 1)) <= tB; y += step)
+        if (t >= tA) ticks.push([t, String(y)]);
+    } else if (spanDays >= 60) {
+      step = [1, 2, 3, 6, 12].filter(function (s) { return spanDays / 30.4 / s <= fits; })[0] || 12;
+      for (var m = d.getUTCFullYear() * 12 + d.getUTCMonth(); (t = Date.UTC(Math.floor(m / 12), m % 12, 1)) <= tB; m++)
+        if (t >= tA && m % step === 0) ticks.push([t, m % 12 === 0 ? String(Math.floor(m / 12)) : MONTHS[m % 12]]);
+    } else if (spanDays >= 2) {
+      step = [1, 2, 3, 5, 7, 14].filter(function (s) { return spanDays / s <= fits; })[0] || 14;
+      for (t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); t <= tB; t += DAY) {
+        var day = new Date(t);
+        if (t >= tA && (day.getUTCDate() - 1) % step === 0) ticks.push([t, MONTHS[day.getUTCMonth()] + " " + day.getUTCDate()]);
+      }
+    } else {
+      step = [1, 3, 6, 12].filter(function (s) { return spanDays * 24 / s <= fits; })[0] || 12;
+      for (t = Math.ceil(tA / HOUR) * HOUR; t <= tB; t += HOUR) {
+        var h = new Date(t).getUTCHours();
+        if (h % step === 0) ticks.push([t, h === 0 ? isoDay(t).slice(5) : pad(h) + ":00"]);
+      }
+    }
+    return ticks;
+  }
+
+  // --- One chart ----------------------------------------------------------------------------
+  function seriesColour(group, i) { return token((group.ordinal ? "--d" : "--s") + (i + 1)); }
+
+  function drawChart(card, group, data) {
+    var series = group.series.filter(function (s) { return data.values[s.key]; });
+    var values = series.map(function (s) { return data.values[s.key]; });
+    var n = values[0].length, p = periods(state.agg, data.start);
+    var k0 = 0, k1 = n - 1, view = state.view;
+    // A window from another location's record that misses this one's shows its whole record.
+    if (Array.isArray(view) && view[1] >= p.at(0) && view[0] <= p.at(n)) {
+      k0 = Math.max(0, Math.min(n - 1, p.index(view[0])));
+      k1 = Math.max(k0, Math.min(n - 1, p.index(view[1])));
+    } else if (view === null && state.agg === "hourly") {
+      k0 = Math.max(0, n - HOURLY_DAYS * 24);
+    }
+    var plot = card.querySelector(".plot");
+    plot.textContent = "";
+    var W = Math.max(260, plot.clientWidth || 400), H = 190;
+    var M = { l: 46, r: 8, t: 8, b: 22 }, iw = W - M.l - M.r, ih = H - M.t - M.b;
+    var tA = p.at(k0), tB = p.at(k1 + 1);
+    function x(t) { return M.l + (t - tA) / (tB - tA) * iw; }
+
+    // Each pixel column's periods, when there are more periods than pixels.
+    var count = k1 - k0 + 1, dense = count > iw, bins = [];
+    if (dense) {
+      for (var px = 0; px < iw; px++) {
+        var a = k0 + Math.floor(px * count / iw), b = k0 + Math.floor((px + 1) * count / iw) - 1;
+        if (b >= a) bins.push([a, b, M.l + px + 0.5]);
+      }
+    }
+    var lo = Infinity, hi = -Infinity;
+    values.forEach(function (vs) {
+      for (var k = k0; k <= k1; k++) if (vs[k] !== null) { if (vs[k] < lo) lo = vs[k]; if (vs[k] > hi) hi = vs[k]; }
+    });
+    if (lo === Infinity) { lo = 0; hi = 1; }
+    if (group.bars) { lo = Math.min(lo, 0); hi = Math.max(hi, 0) || 1; }
+    var scale = niceTicks(lo, hi, Math.max(2, Math.floor(ih / 38)));
+    function y(v) { return M.t + ih - (v - scale.lo) / (scale.hi - scale.lo) * ih; }
+
+    var root = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": group.name + " chart" }, plot);
+    scale.ticks.forEach(function (v) {
+      svg("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), "class": v === 0 && group.bars ? "base" : "grid" }, root);
+      svg("text", { x: M.l - 6, y: y(v) + 3.5, "text-anchor": "end" }, root).textContent = tickWords(v, scale.step);
+    });
+    svg("line", { x1: M.l, x2: W - M.r, y1: M.t + ih, y2: M.t + ih, "class": "base" }, root);
+    var lastRight = -Infinity;
+    timeTicks(tA, tB, Math.max(2, Math.floor(iw / 64))).forEach(function (tick) {
+      var tx = x(tick[0]);
+      svg("line", { x1: tx, x2: tx, y1: M.t + ih, y2: M.t + ih + 4, "class": "base" }, root);
+      var words = tick[1], half = words.length * 3.4;
+      if (tx - half > lastRight + 6 && tx + half <= W) {
+        svg("text", { x: tx, y: H - 6, "text-anchor": "middle" }, root).textContent = words;
+        lastRight = tx + half;
+      }
+    });
+
+    values.forEach(function (vs, i) {
+      var colour = seriesColour(group, i);
+      if (group.bars) {
+        var d = "";
+        if (dense) {
+          bins.forEach(function (bin) {
+            var top = null;
+            for (var k = bin[0]; k <= bin[1]; k++) if (vs[k] !== null && (top === null || vs[k] > top)) top = vs[k];
+            if (top !== null && top > 0) d += "M" + (bin[2] - 0.5) + " " + y(0) + "h1V" + y(top) + "h-1Z";
+          });
+        } else {
+          var w = iw / count, gap = w >= 6 ? 2 : w >= 3 ? 1 : 0;
+          for (var k = k0; k <= k1; k++) if (vs[k] !== null && vs[k] > 0) {
+            var left = x(p.at(k)) + gap / 2, width = Math.max(1, x(p.at(k + 1)) - x(p.at(k)) - gap);
+            d += "M" + left + " " + y(0) + "h" + width + "V" + y(vs[k]) + "h" + -width + "Z";
+          }
+        }
+        svg("path", { d: d, fill: colour, stroke: "none" }, root);
+      } else {
+        var line = "", pen = false;
+        if (dense) {
+          bins.forEach(function (bin) {
+            var low = null, high = null;
+            for (var k = bin[0]; k <= bin[1]; k++) if (vs[k] !== null) {
+              if (low === null || vs[k] < low) low = vs[k];
+              if (high === null || vs[k] > high) high = vs[k];
+            }
+            if (low === null) { pen = false; return; }
+            line += (pen ? "L" : "M") + bin[2] + " " + y(low) + "L" + bin[2] + " " + y(high);
+            pen = true;
+          });
+        } else {
+          for (var k2 = k0; k2 <= k1; k2++) {
+            if (vs[k2] === null) { pen = false; continue; }
+            // h0 after a move draws a lone value as a dot.
+            line += (pen ? "L" : "M") + ((x(p.at(k2)) + x(p.at(k2 + 1))) / 2) + " " + y(vs[k2]) + (pen ? "" : "h0");
+            pen = true;
+          }
+        }
+        svg("path", { d: line, fill: "none", stroke: colour, "stroke-width": dense ? 1.25 : 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, root);
+      }
+    });
+
+    // Hover: a crosshair on the period under the pointer, and a tip with every series' value.
+    var cross = svg("line", { y1: M.t, y2: M.t + ih, "class": "cross", visibility: "hidden" }, root);
+    var brush = svg("rect", { y: M.t, height: ih, "class": "brush", visibility: "hidden" }, root);
+    var hit = svg("rect", { x: M.l, y: M.t, width: iw, height: ih, "class": "hit" }, root);
+    var tip = el("div", "tip");
+    tip.hidden = true;
+    plot.appendChild(tip);
+    function timeAt(event) {
+      var box = root.getBoundingClientRect();
+      var px = (event.clientX - box.left) * W / box.width;
+      return tA + (Math.max(M.l, Math.min(M.l + iw, px)) - M.l) / iw * (tB - tA);
+    }
+    function show(event) {
+      var k = Math.max(k0, Math.min(k1, p.index(timeAt(event))));
+      var cx = (x(p.at(k)) + x(p.at(k + 1))) / 2;
+      cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+      tip.textContent = "";
+      tip.appendChild(el("div", "when", p.label(k)));
+      series.forEach(function (s, i) {
+        var row = el("div", "row"), key = el("span", "key");
+        key.style.background = seriesColour(group, i);
+        row.appendChild(key);
+        var v = values[i][k];
+        row.appendChild(el("strong", "", v === null ? "no value" : number(v) + " " + group.unit));
+        if (series.length > 1) row.appendChild(el("span", "name", s.label));
+        tip.appendChild(row);
+      });
+      tip.hidden = false;
+      var left = cx / W * plot.clientWidth + 12;
+      if (left + tip.offsetWidth > plot.clientWidth) left = cx / W * plot.clientWidth - tip.offsetWidth - 12;
+      tip.style.left = Math.max(0, left) + "px";
+    }
+    var anchor = null;
+    hit.addEventListener("pointerdown", function (event) {
+      if (event.button !== 0) return;
+      anchor = timeAt(event);
+      hit.setPointerCapture(event.pointerId);
+    });
+    hit.addEventListener("pointermove", function (event) {
+      show(event);
+      if (anchor === null) return;
+      var a = x(anchor), b = x(timeAt(event));
+      brush.setAttribute("x", Math.min(a, b)); brush.setAttribute("width", Math.abs(b - a));
+      brush.setAttribute("visibility", "visible");
+    });
+    hit.addEventListener("pointerup", function (event) {
+      if (anchor === null) return;
+      var a = anchor, b = timeAt(event);
+      anchor = null;
+      brush.setAttribute("visibility", "hidden");
+      if (Math.abs(x(b) - x(a)) > 6) {
+        state.view = [Math.min(a, b), Math.max(a, b)];
+        render();
+      }
+    });
+    hit.addEventListener("pointerleave", function () {
+      if (anchor !== null) return;
+      tip.hidden = true; cross.setAttribute("visibility", "hidden");
+    });
+    hit.addEventListener("pointercancel", function () {
+      anchor = null;
+      brush.setAttribute("visibility", "hidden");
+      tip.hidden = true; cross.setAttribute("visibility", "hidden");
+    });
+    hit.addEventListener("dblclick", function () { state.view = "all"; render(); });
+    return { p: p, k0: k0, k1: k1, n: n, series: series, values: values };
+  }
+
+  function fillTable(details, group, drawn) {
+    var wrap = details.querySelector(".table-wrap");
+    wrap.textContent = "";
+    var count = drawn.k1 - drawn.k0 + 1;
+    if (count > 400) {
+      wrap.appendChild(el("p", "note", "Zoom in to 400 or fewer periods to list them; " + count.toLocaleString("en-US") + " are shown."));
+      return;
+    }
+    var table = el("table"), head = el("tr");
+    head.appendChild(el("th", "", "Period"));
+    drawn.series.forEach(function (s) { head.appendChild(el("th", "", (drawn.series.length > 1 ? s.label + ", " : "") + group.unit)); });
+    table.appendChild(head);
+    for (var k = drawn.k0; k <= drawn.k1; k++) {
+      var tr = el("tr");
+      tr.appendChild(el("td", "", drawn.p.label(k)));
+      drawn.values.forEach(function (vs) { tr.appendChild(el("td", "", vs[k] === null ? "" : number(vs[k]))); });
+      table.appendChild(tr);
+    }
+    wrap.appendChild(table);
+  }
+
+  // --- Data ---------------------------------------------------------------------------------
+  // A location's series at an aggregation: inside this page, or in its file in viewer-data/,
+  // which a script tag loads, since a page opened from a file can't read files beside it but
+  // can run scripts there. The file calls era5landData. A series comes packed: each value a
+  // step from the one before, in units of its last decimal; unpacked once, by summing.
+  var loaded = {}, missing = {};
+  function unpack(packed) {
+    var values = {};
+    Object.keys(packed.steps).forEach(function (key) {
+      var steps = packed.steps[key], scale = Math.pow(10, packed.decimals[key]);
+      var out = [], sum = 0;
+      for (var i = 0; i < steps.length; i++) {
+        if (steps[i] === null) { out.push(null); continue; }
+        sum += steps[i];
+        out.push(sum / scale);
+      }
+      values[key] = out;
+    });
+    return { start: packed.start, values: values };
+  }
+  window.era5landData = function (slug, agg, packed) {
+    // Few locations' hourly values at a time, as each holds hundreds of thousands of hours: this
+    // one's, and the one on screen's, should it have changed while this loaded.
+    if (agg === "hourly") {
+      var shown = DATA.locations[state.at].slug + "-hourly";
+      Object.keys(loaded).forEach(function (key) { if (/-hourly$/.test(key) && key !== shown) delete loaded[key]; });
+    }
+    loaded[slug + "-" + agg] = unpack(packed);
+  };
+  // The series, or "loading" while its file loads, after which render runs again, or "missing".
+  function dataFor(loc, agg) {
+    var key = loc.slug + "-" + agg;
+    if (loaded[key]) return loaded[key];
+    if (loc.data[agg]) return (loaded[key] = unpack(loc.data[agg]));
+    if (missing[key]) return "missing";
+    if (!document.getElementById("load-" + key)) {
+      var script = document.createElement("script");
+      script.id = "load-" + key;
+      script.src = DATA.data_folder + "/" + key + ".js";
+      script.onload = function () { script.remove(); if (!loaded[key]) missing[key] = true; render(); };
+      script.onerror = function () { script.remove(); missing[key] = true; render(); };
+      document.head.appendChild(script);
+    }
+    return "loading";
+  }
+
+  // --- The panel ----------------------------------------------------------------------------
+  function renderFacts(loc) {
+    var facts = $("facts");
+    facts.textContent = "";
+    function fact(name, value) { facts.appendChild(el("dt", "", name)); facts.appendChild(el("dd", "", value)); }
+    fact("Location", place(loc.latitude, loc.longitude));
+    if (loc.status !== "ok") return;
+    fact("Grid point", place(loc.grid_latitude, loc.grid_longitude) + " · " + number(loc.distance_km) + " km away");
+    fact("Days", DATA.days === "UTC" ? "UTC" : loc.time_zone + ", " + offsetWords(loc.utc_offset_hours) + " (standard time)");
+    fact("Record", loc.first_day + " to " + loc.last_day);
+  }
+
+  function render() {
+    var loc = DATA.locations[state.at];
+    $("pick").value = String(state.at);
+    renderFacts(loc);
+    $("failed").hidden = loc.status === "ok";
+    $("failed").textContent = loc.status === "ok" ? "" : "No data: " + loc.status.replace(/^failed: /, "");
+    $("data-part").hidden = loc.status !== "ok";
+    Array.prototype.forEach.call($("aggs").children, function (b) { b.setAttribute("aria-checked", String(b.dataset.agg === state.agg)); });
+    $("reset").hidden = true;
+    $("window").textContent = "";
+    var charts = $("charts"), status = $("status");
+    charts.textContent = "";
+    highlight();
+    if (loc.status !== "ok") return;
+    var data = dataFor(loc, state.agg), first = null;
+    status.hidden = typeof data !== "string";
+    if (data === "loading") status.textContent = "Loading the " + NAMES[state.agg].toLowerCase() + " values…";
+    if (data === "missing") {
+      status.textContent = "This page couldn't load " + DATA.data_folder + "/" + loc.slug + "-" + state.agg +
+        ".js. Keep viewer.html in the same folder as its " + DATA.data_folder + " folder.";
+    }
+    if (typeof data === "string") return;
+    DATA.groups.forEach(function (group) {
+      if (!group.series.some(function (s) { return data.values[s.key]; })) return;
+      var card = el("section", "chart"), head = el("div", "head"), titles = el("div");
+      titles.appendChild(el("h3", "", group.name));
+      titles.appendChild(el("div", "meta", NAMES[state.agg] + " " + group.statistic[state.agg] + " · " + group.unit));
+      head.appendChild(titles);
+      if (group.series.length > 1) {
+        var legend = el("div", "legend");
+        group.series.forEach(function (s, i) {
+          var item = el("span"), key = el("span", "key");
+          key.style.background = seriesColour(group, i);
+          item.appendChild(key);
+          item.appendChild(document.createTextNode(s.label));
+          legend.appendChild(item);
+        });
+        head.appendChild(legend);
+      }
+      card.appendChild(head);
+      card.appendChild(el("div", "plot"));
+      var details = el("details");
+      details.appendChild(el("summary", "", "Values"));
+      details.appendChild(el("div", "table-wrap"));
+      card.appendChild(details);
+      charts.appendChild(card);
+      var drawn = drawChart(card, group, data);
+      first = first || drawn;
+      details.addEventListener("toggle", function () { if (details.open) fillTable(details, group, drawn); });
+    });
+    // The window shown, when it's less than the whole record.
+    if (first && (first.k0 > 0 || first.k1 < first.n - 1)) {
+      $("reset").hidden = false;
+      $("window").textContent = first.p.label(first.k0) + " to " + first.p.label(first.k1);
+    }
+  }
+
+  // --- The map ------------------------------------------------------------------------------
+  // Esri's basemaps, whose tiles the reader's browser loads: imagery shows whether a point, or
+  // its grid point, is on land or water.
+  var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
+  var BASEMAPS = {
+    topographic: ["Topographic", "World_Topo_Map", "Powered by Esri · Sources: Esri and its data providers"],
+    imagery: ["Imagery", "World_Imagery", "Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community"],
+  };
+  var map = null, markers = [], gridMark = null, gridLine = null, gridHalo = null, basemap = null;
+  // Esri's maps are light in either theme, so the marks drawn on them are dark in either.
+  var ON_MAP = "#121614";
+  function markerStyle(i) {
+    var loc = DATA.locations[i], chosen = i === state.at, good = loc.status === "ok";
+    return {
+      radius: chosen ? 9 : 6, weight: chosen ? 3 : 1.5,
+      color: chosen ? ON_MAP : "#ffffff",
+      fillColor: good ? token("--accent") : token("--failed"), fillOpacity: 1,
+    };
+  }
+  function highlight() {
+    if (!map) return;
+    markers.forEach(function (m, i) { m.setStyle(markerStyle(i)); });
+    markers[state.at].bringToFront();
+    var loc = DATA.locations[state.at];
+    if (gridMark) { gridMark.remove(); gridLine.remove(); gridHalo.remove(); gridMark = gridLine = gridHalo = null; }
+    if (loc.status === "ok") {
+      var from = [loc.latitude, loc.longitude], to = [loc.grid_latitude, loc.grid_longitude];
+      // A light halo under the line, so it shows on imagery too.
+      gridHalo = L.polyline([from, to], { color: "#ffffff", opacity: 0.8, weight: 4, interactive: false }).addTo(map);
+      gridLine = L.polyline([from, to], { color: ON_MAP, weight: 1.5, interactive: false }).addTo(map);
+      gridMark = L.circleMarker(to, { radius: 3.5, weight: 0, fillColor: ON_MAP, fillOpacity: 1, interactive: false })
+        .bindTooltip("ERA5-Land grid point", { direction: "bottom" }).addTo(map);
+      markers[state.at].bringToFront();
+    }
+  }
+  function choose(i) {
+    state.at = i;
+    render();
+    if (map) map.panInside(markers[i].getLatLng(), { padding: [40, 40] });
+  }
+  function buildMap() {
+    if (!window.L) {
+      $("map-note").hidden = false;
+      $("map-note").textContent = "The map needs an internet connection, to load its library and background. The charts work without one: choose a location from the list.";
+      return;
+    }
+    map = L.map("map", { worldCopyJump: true, zoomControl: true });
+    var control = $("basemap");
+    control.hidden = false;
+    Object.keys(BASEMAPS).forEach(function (name) {
+      var spec = BASEMAPS[name];
+      var layer = L.tileLayer(ESRI + spec[1] + "/MapServer/tile/{z}/{y}/{x}", { maxZoom: 18, attribution: spec[2] });
+      var b = el("button", "", spec[0]);
+      b.type = "button"; b.setAttribute("role", "radio");
+      b.addEventListener("click", function () {
+        if (basemap) map.removeLayer(basemap);
+        basemap = layer.addTo(map);
+        Array.prototype.forEach.call(control.children, function (c) { c.setAttribute("aria-checked", String(c === b)); });
+      });
+      control.appendChild(b);
+    });
+    control.children[0].click();
+    var bounds = [];
+    DATA.locations.forEach(function (loc, i) {
+      var m = L.circleMarker([loc.latitude, loc.longitude], markerStyle(i)).addTo(map);
+      // A node, not a string, which Leaflet would read as HTML.
+      m.bindTooltip(el("span", "", loc.name + (loc.status === "ok" ? "" : " (failed)")), { direction: "top" });
+      m.on("click", function () { choose(i); });
+      markers.push(m);
+      bounds.push([loc.latitude, loc.longitude]);
+    });
+    if (bounds.length === 1) map.setView(bounds[0], 9);
+    else map.fitBounds(bounds, { padding: [30, 30], maxZoom: 9 });
+  }
+
+  // --- Start --------------------------------------------------------------------------------
+  function start() {
+    var failed = DATA.locations.length - ok.length;
+    var firsts = ok.map(function (i) { return DATA.locations[i].first_day; }).filter(Boolean).sort();
+    var lasts = ok.map(function (i) { return DATA.locations[i].last_day; }).filter(Boolean).sort();
+    var summary = $("summary");
+    summary.textContent = DATA.locations.length + " location" + (DATA.locations.length === 1 ? "" : "s") +
+      (firsts.length ? " · " + firsts[0] + " to " + lasts[lasts.length - 1] : "") +
+      " · days in " + DATA.days + " · made " + DATA.made.replace("T", " ").slice(0, 16) + " UTC ";
+    if (failed) summary.appendChild(el("span", "chip", failed + " failed"));
+
+    var pick = $("pick");
+    DATA.locations.forEach(function (loc, i) {
+      var option = el("option", "", loc.name + (loc.status === "ok" ? "" : " (failed)"));
+      option.value = String(i);
+      pick.appendChild(option);
+    });
+    pick.addEventListener("change", function () { choose(+pick.value); });
+
+    DATA.aggregations.forEach(function (agg) {
+      var b = el("button", "", NAMES[agg]);
+      b.type = "button"; b.dataset.agg = agg; b.setAttribute("role", "radio");
+      b.addEventListener("click", function () { state.agg = agg; state.view = null; render(); });
+      $("aggs").appendChild(b);
+    });
+    $("reset").addEventListener("click", function () { state.view = "all"; render(); });
+
+    var credit = $("credit");
+    credit.appendChild(el("p", "", "Data: " + DATA.dataset + ", " + DATA.doi + ". Cite: " + DATA.citation + "."));
+    credit.appendChild(el("p", "", DATA.attribution + " Licence: " + DATA.licence + "."));
+    credit.appendChild(el("p", "", "Hours are stamped with their end: an amount or radiation covers the hour before, and any other variable is its value at that moment. A day is the 24 hours stamped 01:00 to 24:00. A period with any hour missing has no value."));
+
+    buildMap();
+    render();
+    // Redraw on a resize that changes the charts' width, not on a phone's toolbar changing height.
+    var waiting = null, width = $("charts").clientWidth;
+    window.addEventListener("resize", function () {
+      clearTimeout(waiting);
+      waiting = setTimeout(function () {
+        if (map) map.invalidateSize();
+        if ($("charts").clientWidth !== width) { width = $("charts").clientWidth; render(); }
+      }, 150);
+    });
+    if (window.matchMedia) {
+      var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+      if (scheme.addEventListener) scheme.addEventListener("change", render);
+    }
+    new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+  start();
+})();
+</script>
+</body>
+</html>

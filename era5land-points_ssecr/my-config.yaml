@@ -1,0 +1,34 @@
+# ERA5-Land extraction configuration.Each point's data come from ERA5-Land's grid point nearest it, on a 0.1° grid (about 9 km).
+#Update list of sites/column names in sites.csv,  Keep sites.csv in same directory as this file. 
+output_folder: results
+locations_file: sites.csv
+location_columns:
+  name: site_code
+  latitude: Latitude
+  longitude: Longitude
+
+# The variables to download, by the names in the README's table.
+variables:
+  - air_temperature
+  - precipitation
+  - soil_temperature_0_7cm
+  - soil_temperature_7_28cm
+  - soil_temperature_28_100cm
+  - soil_temperature_100_289cm
+
+# The first and last day, both included, as YYYY-MM-DD. Leave either out for the start of the
+# record (1950) or its end (about a week before today).
+start: 1950-01-01
+end: 2025-12-31
+
+# The CSV files to write: any of hourly, daily, monthly and yearly. Hourly files are large: about
+# 60 MB a location over the whole record with these six variables. The viewer shows all four
+# whatever this says.
+aggregations: [daily, monthly, yearly]
+
+# How days are counted: local (each location's local standard time, without daylight saving
+# time) or utc.
+time_zone: local
+
+# How many requests to send to the Climate Data Store at once.
+parallel_requests: 4

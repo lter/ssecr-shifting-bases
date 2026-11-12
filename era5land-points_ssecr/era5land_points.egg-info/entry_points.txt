@@ -1,0 +1,2 @@
+[console_scripts]
+era5land-points = era5land_points.cli:main

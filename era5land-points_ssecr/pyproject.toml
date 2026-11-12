@@ -1,0 +1,30 @@
+[project]
+name = "era5land-points"
+version = "1.0.0"
+description = "ERA5-Land's hourly series at chosen points, summarised into days, months and years"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # The Climate Data Store's client; 0.7.7 is the least its setup page asks for.
+    "cdsapi>=0.7.7",
+    "pandas>=2.2",
+    "pyyaml>=6.0",
+    # Each location's time zone, for days in local time.
+    "timezonefinder>=6.5",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+era5land-points = "era5land_points.cli:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["era5land_points"]
+
+[tool.setuptools.package-data]
+era5land_points = ["viewer.html"]
